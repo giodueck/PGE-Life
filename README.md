@@ -18,7 +18,7 @@ For debugging replace `-O3` with `-g`
 # Credits
 Thanks OneLoneCoder, aka javidx9, and everyone else for developing the [olc::PixelGameEngine](https://github.com/OneLoneCoder/olcPixelGameEngine)! The license is included in the olcPixelGameEngine.h file.\
 Here are some more links:\
-https://OneLoneCoder.com\
+https://OneLoneCoder.com \
 [YouTube](https://youtube.com/javidx9)
 
-Code for getopt.h/.c was taken from the Univerity of California, the full copyright notice is included in the source files.
+Code for getopt.h/.c was taken from the Univerity of California and adapted to work on Windows, the full copyright notice is included in the source files.
