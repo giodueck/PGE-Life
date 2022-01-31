@@ -3,7 +3,7 @@
 
 #define MAJOR 1
 #define MINOR 0
-#define PREFIX (char*)"indev-"
+#define POSTFIX (char*)"-indev"
 
 #define APPNAME (char*)"PGE-Life"
 
