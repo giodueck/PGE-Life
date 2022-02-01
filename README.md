@@ -6,6 +6,23 @@ Features:
 - Start the simulation with SPACE, or step through generations with ENTER
 - Reset the simulation with CTRL+R
 
+life -h:
+```
+Usage: life [-h] [-v] [-r] [-R <rule>] [-t <n>] [-u <n>] [-y]
+    Options:
+        -h          Print this help menu and exit.
+        -r          Generate random starting generation on start-up.
+        -R <rule>   Specify a Life-like rule. Game of Life rules are default.
+                    Format: B<[0|1|...|8]>S<[0|1|...|8]>
+                    Example: for GoL '-R B3S23', i.e. dead cell are born with 3 neighbors,
+                    live cells survive with 2 or 3 neighbors.
+        -t <n>      Specify the length of colored trails left by dead cells.
+                    Set 0 to disable trails, default 6.
+        -u <n>      Specify the updates per second. Unlimited by default.
+        -v          Print version information and credits and exit.
+        -y          Enable VSync.
+```
+
 # Compilation
 Since I don't like the text editor in Visual Studio I chose to develop in VS Code instead. The compilation is not as straight-forward, as it requires an external compiler.
 
