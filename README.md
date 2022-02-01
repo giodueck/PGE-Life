@@ -6,7 +6,7 @@ Features:
 - Start the simulation with SPACE, or step through generations with ENTER
 - Reset the simulation with CTRL+R
 
-life -h:
+`life -h`:
 ```
 Usage: life [-h] [-v] [-r] [-R <rule>] [-t <n>] [-u <n>] [-y]
     Options:

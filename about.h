@@ -3,7 +3,7 @@
 
 #define MAJOR 1
 #define MINOR 1
-#define POSTFIX (char*)"-indev"
+#define POSTFIX (char*)""
 
 #define APPNAME (char*)"life"
 
