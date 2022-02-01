@@ -3,6 +3,7 @@
 
 #include "getopt.h"
 #include "about.h"
+#include "various.h"
 
 #include <cstdlib>
 #include <vector>
@@ -30,9 +31,7 @@ bool oLoadSeed = false,
      oLoadPreset = false,
      oRules = false,
      oCustomScreenSize = false,
-     oCustomTrailTime = false,
-     oCustomTrailColor0 = false,
-     oCustomTrailColor1 = false;
+     oCustomTrailTime = false;
 
 // Arguments for said options
 const char *seedFilename,
@@ -41,14 +40,13 @@ int upsLimit,
     pixelSize,
     preset;
 const char *ruleStr;
-int customWidth, cusstomHeight,
-    trailTime,
-    trailC0, trailC1;
+int customWidth, cusstomHeight;
+int trailtime;
 
 // Read custom rules from arguments
 void SetRules(char *arg)
 {
-    bool *currRule = nullptr;
+    bool *currRule = Birth;
     for (int c = 0; arg[c] != '\0'; c++)
     {
         switch (arg[c])
@@ -92,11 +90,11 @@ private:
     std::vector<bool> nextGen;
     std::vector<int> trail;
     std::vector<bool> seed;
-
+    int trailTime = 6;
     olc::Pixel livePixel = olc::WHITE;
     olc::Pixel deadPixel = olc::BLACK;
-    const int trailTime = 6;
     std::vector<float> lerpValues;
+    // Seed colors used by B3S23, all other rules have unique colors based on these colors
     olc::Pixel trailRange[2] = {olc::BLUE, olc::CYAN};
 
     bool bContinue = false;
@@ -128,6 +126,45 @@ private:
         else if (y >= ScreenHeight())
             y -= ScreenHeight();
         nextGen[y * ScreenWidth() + x] = val;
+    }
+
+    void GenTrailRange()
+    {
+        float h0, s0, v0;
+        float h1, s1, v1;
+        int r0, g0, b0;
+        int r1, g1, b1;
+        float hueStep = 360.0f / 262144; // pow(2, 18)
+        float hueOffset0, hueOffset1;
+        int ruleValue = 0;
+
+        // h = <ruleValue> * hueStep + hueOffset
+        RGBtoHSV(trailRange[0].r, trailRange[0].g, trailRange[0].b, h0, s0, v0);
+        hueOffset0 = fmod(h0 - 0x4060 * hueStep * 20, 360);
+        RGBtoHSV(trailRange[1].r, trailRange[1].g, trailRange[1].b, h1, s1, v1);
+        hueOffset1 = fmod(h1 - 0x4060 * hueStep * 20, 360);
+
+        // Rule value is a 19-bit number generated through the current ruleset
+        // Example: B3S23 = (B)00 0100 000 (S)0 0110 0000 = 0x4060 = 16480
+        //                     01 2345 678    0 1234 5678
+        for (int i = 0; i < 18; i++)
+        {
+            if (i < 9)
+            {
+                ruleValue |= Birth[i];
+            } else
+            {
+                ruleValue |= Survival[i - 9];
+            }
+            ruleValue = ruleValue << 1;
+        }
+        ruleValue = ruleValue >> 1;
+
+        // Set colors
+        HSVtoRGB(fmod(ruleValue * hueStep * 20 + hueOffset0, 360), s0, v0, r0, g0, b0);
+        HSVtoRGB(fmod(ruleValue * hueStep * 20 + hueOffset1, 360), s1, v1, r1, g1, b1);
+        trailRange[0] = olc::Pixel(r0, g0, b0);
+        trailRange[1] = olc::Pixel(r1, g1, b1);
     }
 
     void UpdateTrails()
@@ -201,6 +238,16 @@ public:
         {
             fGoalTime = 1.0f / upsLimit;
             fCurrTime = 0;
+        }
+
+        if (oCustomTrailTime)
+        {
+            trailTime = trailtime;
+        }
+
+        if (trailTime > 0)
+        {
+            GenTrailRange();
         }
 
         return true;
@@ -332,12 +379,17 @@ int main(int argc, char **argv)
     }
     else
     {
-        while ((opt = getopt(argc, argv, ":vrR:u:y")) != -1)
+        while ((opt = getopt(argc, argv, ":hvrR:t:u:y")) != -1)
         {
             switch (opt)
             {
+            case 'h':
+                oHelp = true;
+                printHelp(true);
+                break;
             case 'v':
                 oVersion = true;
+                printVersion();
                 break;
             case 'r':
                 oRandom = true;
@@ -351,8 +403,17 @@ int main(int argc, char **argv)
                 upsLimit = atoi(optarg);
                 if (upsLimit < 1)
                 {
-                    fprintf(stderr, "Bad argument: %d\nOption -m takes a positive integer argument!\n", upsLimit);
-                    fprintf(stderr, "Usage: %s [-v] [-m <n>] [-r] [-R <rule>] [-y]\n", argv[0]);
+                    fprintf(stderr, "Bad argument: %d\nOption -%c takes a positive integer argument!\n", upsLimit, opt);
+                    printHelp(argv);
+                    exit(EXIT_FAILURE);
+                }
+                break;
+            case 't':
+                oCustomTrailTime = true;
+                if ((trailtime = atoi(optarg)) < 0)
+                {
+                    fprintf(stderr, "Bad argument: %d\nOption -%c takes a non-negative integer argument!\n", trailtime, opt);
+                    printHelp(argv);
                     exit(EXIT_FAILURE);
                 }
                 break;
@@ -362,16 +423,9 @@ int main(int argc, char **argv)
             case ':':
                 std::cerr << "Option -" << char(optopt) << " is missing an argument!\n";
             default: // '?'
-                fprintf(stderr, "Usage: %s [-v] [-r] [-R <rule>] [-u <n>] [-y]\n", argv[0]);
+                printHelp(argv);
                 exit(EXIT_FAILURE);
             }
-        }
-
-        if (oVersion || oHelp)
-        {
-            if (oVersion)
-                printVersion();
-            //help
         }
 
         if (!oRules)
@@ -381,12 +435,9 @@ int main(int argc, char **argv)
         }
     }
 
-    if (!oVersion && !oHelp)
-    {
-        Life game;
-        if (game.Construct(240, 160, 4, 4, false, oVsync))
-            game.Start();
-    }
+    Life game;
+    if (game.Construct(240, 160, 4, 4, false, oVsync))
+        game.Start();
 
     return EXIT_SUCCESS;
 }
